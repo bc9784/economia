@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chi va dove?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: registro contabile — a sinistra la scheda del conto (un "conto a T"), a destra il bilancio che si riempie dal vivo */
+:root{
+  --paper:#f3f6f1; --sheet:#ffffff; --ink:#18233a; --muted:#5d6b7e; --rule:#d5dfd6; --grid:#e6ede6;
+  --dare:#1f5fbf; --dare-soft:#e3ecfa; --avere:#b8431f; --avere-soft:#f8e6de;
+  --accent:#0f7a5c; --accent-soft:#dcf1e8; --ok:#138a4a; --ok-soft:#dff3e6; --ko:#c2352b; --ko-soft:#fbe3e0; --gold:#b98200;
+  --shadow:0 1px 0 rgba(24,35,58,.06),0 10px 28px -12px rgba(24,35,58,.25);
+  --f-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0f1522; --sheet:#172033; --ink:#e7edf5; --muted:#9aa8bb; --rule:#2a3750; --grid:#1b2538;
+  --dare:#79a7f0; --dare-soft:#1b2c4a; --avere:#f08d6a; --avere-soft:#3a2219;
+  --accent:#43c49a; --accent-soft:#143a30; --ok:#4fd28a; --ok-soft:#133523; --ko:#ff7b6e; --ko-soft:#3d1a18; --gold:#f2c14e;
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 14px 30px -14px rgba(0,0,0,.7); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f1522; --sheet:#172033; --ink:#e7edf5; --muted:#9aa8bb; --rule:#2a3750; --grid:#1b2538;
+  --dare:#79a7f0; --dare-soft:#1b2c4a; --avere:#f08d6a; --avere-soft:#3a2219;
+  --accent:#43c49a; --accent-soft:#143a30; --ok:#4fd28a; --ok-soft:#133523; --ko:#ff7b6e; --ko-soft:#3d1a18; --gold:#f2c14e;
+  --shadow:0 1px 0 rgba(0,0,0,.3),0 14px 30px -14px rgba(0,0,0,.7); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:28px 28px}
+.wrap{max-width:1320px;margin:0 auto;padding-inline:clamp(16px,3vw,36px);padding-block:20px 40px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+/* ---------- START ---------- */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center;padding-block:24px 8px}
+.hero h1{font-size:clamp(2.8rem,7vw,5.6rem);line-height:.92;letter-spacing:-.03em;font-weight:800}
+.hero h1 .q{color:var(--accent)}
+.hero p.lead{font-size:1.15rem;max-width:56ch;color:var(--muted);margin:16px 0 0}
+.demo{position:relative;height:330px}
+.demo .tcard{position:absolute;width:290px;max-width:80%}
+.demo .tcard:nth-child(1){left:0;top:0;transform:rotate(-4deg)}
+.demo .tcard:nth-child(2){right:0;top:150px;transform:rotate(3deg)}
+.demo .arrow{position:absolute;left:40%;bottom:6px;font-family:var(--f-display);font-weight:800;font-size:1rem;color:var(--muted)}
+.setup{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:28px}
+.opt{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.opt h3{font-size:1.05rem;margin-bottom:10px}
+.choices{display:grid;gap:8px}
+.choice{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;background:transparent;border:1.5px solid var(--rule);border-radius:10px;padding:10px 12px}
+.choice small{color:var(--muted);font-size:.85rem}
+.choice[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.choice b{font-family:var(--f-display);font-size:1.05rem}
+.go{margin-top:22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.btn{border:0;border-radius:12px;padding:14px 26px;font-family:var(--f-display);font-weight:700;font-size:1.15rem;background:var(--ink);color:var(--paper)}
+.btn.ghost{background:transparent;border:1.5px solid var(--rule);color:var(--ink)}
+.btn.acc{background:var(--accent);color:#fff}
+.rules{margin-top:26px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.rule{border-top:2px solid var(--ink);padding-top:10px;font-size:.95rem;color:var(--muted);min-width:0}
+.rule b{display:block;color:var(--ink);font-family:var(--f-display);font-size:1.05rem;margin-bottom:3px}
+
+/* ---------- T CARD ---------- */
+.tcard{background:var(--sheet);border-radius:16px;box-shadow:var(--shadow);border:1px solid var(--rule);overflow:hidden}
+.tcard .th{padding:14px 18px 10px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:baseline}
+
+.tcard .name{font-family:var(--f-display);font-weight:800;font-size:clamp(1.5rem,3.2vw,2.35rem);line-height:1.05;letter-spacing:-.01em;padding:0 18px 14px;border-bottom:3px solid var(--ink)}
+.tcard .tt{display:grid;grid-template-columns:1fr 1fr}
+.tcard .side{padding:12px 18px 16px;min-height:86px}
+.tcard .side+.side{border-left:3px solid var(--ink)}
+.tcard .side .lab{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.tcard .side.d .lab{color:var(--dare)} .tcard .side.a .lab{color:var(--avere)}
+.tcard .side .amt{font-family:var(--f-num);font-weight:600;font-size:clamp(1.25rem,2.6vw,1.9rem);margin-top:4px;font-variant-numeric:tabular-nums}
+.tcard .side.d .amt{color:var(--dare)} .tcard .side.a .amt{color:var(--avere)}
+.tcard .side .amt.none{color:var(--rule)}
+.tcard .foot{padding:8px 18px;font-size:.85rem;color:var(--muted);background:var(--grid);display:flex;justify-content:space-between;gap:8px}
+.demo .tcard .name{font-size:1.35rem}.demo .tcard .side .amt{font-size:1.15rem}.demo .tcard .side{min-height:60px}
+
+/* ---------- GAME ---------- */
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h2{font-size:1.6rem;font-weight:800;letter-spacing:-.02em}
+.brand h2 .q{color:var(--accent)}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:6px 12px;min-width:84px}
+.stat .eyebrow{font-size:.66rem}
+.stat .v{font-family:var(--f-num);font-weight:600;font-size:1.2rem}
+.stat.team{border-width:2px}
+.stat.team.on{border-color:var(--accent);background:var(--accent-soft)}
+.progress{height:8px;background:var(--rule);border-radius:99px;overflow:hidden;margin-bottom:18px}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .4s}
+.game{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:24px;align-items:start}
+.play{min-width:0}
+.stage{position:relative}
+.tcard.enter{animation:enter .35s ease-out}
+@keyframes enter{from{transform:translateY(14px) rotate(-1.5deg);opacity:.2}to{transform:none;opacity:1}}
+.tcard.shake{animation:shake .38s}
+@keyframes shake{20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+.step{margin-top:18px}
+.step .q{font-family:var(--f-display);font-weight:700;font-size:1.25rem;margin-bottom:10px;display:flex;gap:10px;align-items:center}
+.step .q .n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--paper);font-size:.95rem;flex:none}
+.docs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.doc{border:2px solid var(--rule);background:var(--sheet);border-radius:14px;padding:16px;text-align:left;display:grid;gap:4px;transition:transform .12s,border-color .12s}
+.doc:hover{transform:translateY(-2px);border-color:var(--ink)}
+.doc b{font-family:var(--f-display);font-size:1.35rem;font-weight:800}
+.doc span{color:var(--muted);font-size:.9rem}
+.doc.right{border-color:var(--ok);background:var(--ok-soft)}
+.doc.wrong{border-color:var(--ko);background:var(--ko-soft)}
+.doc:disabled{cursor:default;transform:none}
+.vgroups{display:grid;gap:12px}
+.vcols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.vcol{min-width:0}
+.vcol>.eyebrow{display:block;margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--ink)}
+.vg{margin-bottom:8px}
+.vg .gl{font-size:.8rem;font-weight:700;color:var(--muted);margin:6px 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid var(--rule);background:var(--sheet);border-radius:9px;padding:7px 10px;font-size:.92rem;text-align:left;line-height:1.2;max-width:100%}
+.chip:hover{border-color:var(--ink)}
+.chip .c{font-family:var(--f-num);font-weight:600;margin-right:5px;color:var(--accent)}
+.chip.right{border-color:var(--ok);background:var(--ok-soft)}
+.chip.wrong{border-color:var(--ko);background:var(--ko-soft);text-decoration:line-through}
+.chip:disabled{cursor:default}
+.fb{margin-top:16px;border-radius:14px;padding:14px 16px;border:1.5px solid;display:grid;gap:6px}
+.fb.ok{border-color:var(--ok);background:var(--ok-soft)}
+.fb.ko{border-color:var(--ko);background:var(--ko-soft)}
+.fb.info{border-color:var(--rule);background:var(--sheet)}
+.fb h4{margin:0;font-family:var(--f-display);font-size:1.15rem}
+.fb p{margin:0}
+.fb .row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:4px}
+.pts{font-family:var(--f-num);font-weight:600}
+kbd{font-family:var(--f-num);font-size:.8rem;border:1px solid var(--rule);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:var(--sheet)}
+
+/* ---------- LEDGER PANEL ---------- */
+.ledger{background:var(--sheet);border:1px solid var(--rule);border-radius:16px;box-shadow:var(--shadow);position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);min-width:0;overflow:hidden}
+.tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--rule)}
+.tab{background:transparent;border:0;padding:12px;font-family:var(--f-display);font-weight:700;font-size:1rem;color:var(--muted);border-bottom:3px solid transparent}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.lbody{padding:10px 14px 14px;max-height:calc(100vh - 150px);overflow:auto}
+.lsec{margin-top:6px}
+.lsec h5{margin:10px 0 4px;font-family:var(--f-display);font-size:.95rem;display:flex;justify-content:space-between;gap:8px;border-bottom:2px solid var(--ink);padding-bottom:3px}
+.lrow{display:flex;justify-content:space-between;gap:10px;font-size:.88rem;padding:3px 4px;border-radius:6px}
+.lrow .l{min-width:0}
+.lrow .c{font-family:var(--f-num);color:var(--muted);margin-right:4px;font-size:.8rem}
+.lrow .v{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.lrow.empty .v{color:var(--rule)}
+.lrow.flash{animation:flash 1.3s}
+@keyframes flash{0%,40%{background:var(--accent-soft)}100%{background:transparent}}
+.lrow.tot{font-weight:700;border-top:1px solid var(--rule);margin-top:4px;padding-top:6px}
+.check{margin-top:12px;border-radius:12px;padding:10px 12px;background:var(--grid);display:grid;gap:8px}
+.meter{display:grid;grid-template-columns:70px 1fr auto;gap:8px;align-items:center;font-size:.85rem}
+.meter .bar{height:10px;border-radius:99px;background:var(--rule);overflow:hidden}
+.meter .bar i{display:block;height:100%;width:0;transition:width .5s}
+.meter .bar.att i{background:var(--dare)} .meter .bar.pas i{background:var(--avere)}
+.meter .v{font-family:var(--f-num);font-size:.85rem;white-space:nowrap}
+.utile{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-family:var(--f-display);font-weight:800;font-size:1.15rem;padding-top:6px;border-top:1px dashed var(--muted)}
+.utile .v{font-family:var(--f-num);font-weight:600}
+.target{font-size:.8rem;color:var(--muted)}
+
+/* ---------- END ---------- */
+.end h2{font-size:clamp(2.2rem,5vw,3.8rem);font-weight:800;letter-spacing:-.02em}
+.verdict{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}
+.kpi{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:14px;min-width:0}
+.kpi .v{font-family:var(--f-num);font-weight:600;font-size:1.6rem}
+.kpi.good{border-color:var(--ok);background:var(--ok-soft)}
+.bil{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:10px}
+.bil .blk{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:14px;min-width:0;overflow-x:auto}
+.bil h3{font-size:1.2rem;margin-bottom:6px}
+table.civ{width:100%;border-collapse:collapse;font-size:.88rem}
+.civ td{padding:4px 6px;border-bottom:1px solid var(--grid);vertical-align:top}
+.civ td.n{text-align:right;font-family:var(--f-num);white-space:nowrap;font-variant-numeric:tabular-nums}
+.civ tr.h td{font-weight:700;padding-top:10px;color:var(--muted);font-size:.8rem;letter-spacing:.06em;text-transform:uppercase}
+.civ tr.t td{font-weight:700;border-top:2px solid var(--ink);background:var(--grid)}
+.civ td.i{padding-left:18px}
+.errs{margin-top:22px}
+.errs ul{list-style:none;padding:0;margin:8px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.errs li{background:var(--sheet);border:1px solid var(--rule);border-left:4px solid var(--ko);border-radius:10px;padding:8px 12px;font-size:.92rem;min-width:0}
+.errs li b{display:block}
+.note{color:var(--muted);font-size:.88rem}
+
+@media (max-width:900px){
+  .hero,.game,.bil{grid-template-columns:1fr}
+  .setup,.rules{grid-template-columns:1fr}
+  .demo{display:none}
+  .ledger{position:static}
+  .lbody{max-height:none}
+  .verdict{grid-template-columns:1fr 1fr}
+  .errs ul{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .vcols,.docs{grid-template-columns:1fr}
+  .tcard .side{padding:10px 12px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+
+<div class="wrap" id="app"></div>
+
+<script>
+const DATA = {"31":{"name":"Flopack spa","utile":58456.56,"target":1098326,"cards":[{"n":"Azionisti c/versamenti richiamati","v":62000.0,"c":"fatt","x":"SA"},{"n":"Brevetti industriali","v":58225.0,"c":"plur","x":"BI3"},{"n":"Terreni e fabbricati","v":458000.0,"c":"plur","x":"BII1"},{"n":"Impianti e macchinari","v":219469.0,"c":"plur","x":"BII2"},{"n":"Attrezzature industriali","v":69873.0,"c":"plur","x":"BII3"},{"n":"Attrezzature commerciali","v":43544.0,"c":"plur","x":"BII3"},{"n":"Arredamento","v":20253.0,"c":"plur","x":"BII4"},{"n":"Partecipazioni diverse","v":60410.0,"c":"fatt","x":"BIII1d"},{"n":"Crediti v/clienti","v":199048.0,"c":"fatt","x":"CII1"},{"n":"Crediti insoluti","v":11950.0,"c":"fatt","x":"CII1"},{"n":"C/c postali","v":3567.68,"c":"fatt","x":"CIV1"},{"n":"Denaro in cassa","v":1494.0,"c":"fatt","x":"CIV3"},{"n":"Fondo ammortamento brevetti industriali","v":-34933.0,"c":"famm","x":"BI3"},{"n":"Fondo ammortamento fabbricati","v":-72762.0,"c":"famm","x":"BII1"},{"n":"Fondo ammortamento impianti e macchinari","v":-96458.79,"c":"famm","x":"BII2"},{"n":"Fondo ammortamento attrezzature industriali","v":-34936.6,"c":"famm","x":"BII3"},{"n":"Fondo ammortamento attrezzature commerciali","v":-15240.6,"c":"famm","x":"BII3"},{"n":"Fondo ammortamento arredamento","v":-7290.36,"c":"famm","x":"BII4"},{"n":"Fondo svalutazione crediti","v":-4610.99,"c":"fsval","x":"CII1"},{"n":"Capitale sociale","v":-605000.0,"c":"pn","x":"PAI"},{"n":"Riserva legale","v":-55569.0,"c":"pn","x":"PAIV"},{"n":"Utili a nuovo","v":-1187.0,"c":"pn","x":"PAVIII"},{"n":"Debiti per TFR","v":-118621.98,"c":"fpas","x":"PC"},{"n":"Banche c/interessi maturati","v":-2590.0,"c":"fpas","x":"PD4"},{"n":"Mutui passivi","v":-24000.0,"c":"fpas","x":"PD4"},{"n":"Debiti v/fornitori","v":-143298.0,"c":"fpas","x":"PD7"},{"n":"Debiti per ritenute da versare","v":-7376.12,"c":"fpas","x":"PD12"},{"n":"Debiti fiscali diversi","v":-110.0,"c":"fpas","x":"PD12"},{"n":"Costi di sviluppo","v":43000.0,"c":"plur","x":"BI2"},{"n":"Immobilizzazioni materiali in corso","v":17200.0,"c":"plur","x":"BII5"},{"n":"Materie prime","v":20250.0,"c":"sosp","x":"CI1"},{"n":"Prodotti in lavorazione","v":22750.0,"c":"sosp","x":"CI2"},{"n":"Prodotti finiti","v":49620.0,"c":"sosp","x":"CI4"},{"n":"Risconti attivi","v":3904.0,"c":"sosp","x":"DA"},{"n":"Fatture da ricevere","v":-19900.0,"c":"fpas","x":"PD7"},{"n":"Ratei passivi","v":-500.0,"c":"rateo","x":"PE"},{"n":"Debiti per imposte","v":-34719.78,"c":"fpas","x":"PD12"},{"n":"Debiti per IVA","v":-4659.2,"c":"fpas","x":"PD12"},{"n":"Debiti v/istituti previdenziali","v":-13250.0,"c":"fpas","x":"PD13"},{"n":"Banche c/c passivi","v":-9087.7,"c":"fpas","x":"PD4"},{"n":"Prodotti c/vendite","v":-1972156.0,"c":"rev","x":"A1"},{"n":"Resi su vendite","v":9113.0,"c":"rev","x":"A1"},{"n":"Ribassi e abbuoni passivi","v":2430.0,"c":"rev","x":"A1"},{"n":"Prodotti in lavorazione c/esistenze iniziali","v":19241.0,"c":"cost","x":"A2"},{"n":"Prodotti c/esistenze iniziali","v":41519.0,"c":"cost","x":"A2"},{"n":"Plusvalenze","v":-3291.0,"c":"rev","x":"A5"},{"n":"Rimborsi costi di vendita","v":-10835.0,"c":"rev","x":"A5"},{"n":"Materie prime c/acquisti","v":1243716.0,"c":"cost","x":"B6"},{"n":"Resi su acquisti","v":-5304.0,"c":"rettc","x":"B6"},{"n":"Ribassi e abbuoni attivi","v":-2187.0,"c":"rettc","x":"B6"},{"n":"Costi di trasporto","v":121718.0,"c":"cost","x":"B7"},{"n":"Costi per energia","v":55174.0,"c":"cost","x":"B7"},{"n":"Pubblicità","v":65316.0,"c":"cost","x":"B7"},{"n":"Costi postali","v":6431.0,"c":"cost","x":"B7"},{"n":"Assicurazioni","v":12956.0,"c":"cost","x":"B7"},{"n":"Costi per i locali","v":13670.0,"c":"cost","x":"B7"},{"n":"Costi d'incasso","v":987.0,"c":"cost","x":"B7"},{"n":"Commissioni bancarie","v":200.0,"c":"cost","x":"B7"},{"n":"Lavorazioni presso terzi","v":21468.0,"c":"cost","x":"B7"},{"n":"Salari e stipendi","v":205063.0,"c":"cost","x":"B9a"},{"n":"Oneri sociali","v":77886.0,"c":"cost","x":"B9b"},{"n":"Materie prime c/esistenze iniziali","v":30380.0,"c":"cost","x":"B11"},{"n":"Oneri fiscali diversi","v":150.0,"c":"cost","x":"B14"},{"n":"Minusvalenze","v":2531.0,"c":"cost","x":"B14"},{"n":"Proventi da partecipazioni","v":-3030.0,"c":"rev","x":"C15"},{"n":"Interessi attivi v/clienti","v":-1862.0,"c":"rev","x":"C16d"},{"n":"Interessi passivi bancari","v":2590.0,"c":"cost","x":"C17"},{"n":"Interessi passivi su mutui","v":2418.0,"c":"cost","x":"C17"},{"n":"Costi di sviluppo rinviati","v":-43000.0,"c":"rettc","x":"A4"},{"n":"Ammortamento brevetti industriali","v":11645.0,"c":"cost","x":"B10a"},{"n":"Ammortamento fabbricati","v":12800.0,"c":"cost","x":"B10b"},{"n":"Ammortamento impianti e macchinari","v":31142.79,"c":"cost","x":"B10b"},{"n":"Ammortamento attrezzature industriali","v":13974.6,"c":"cost","x":"B10b"},{"n":"Ammortamento attrezzature commerciali","v":6531.6,"c":"cost","x":"B10b"},{"n":"Ammortamento arredamento","v":2430.36,"c":"cost","x":"B10b"},{"n":"Perdite su crediti","v":3965.0,"c":"cost","x":"B14"},{"n":"Svalutazione crediti","v":1054.99,"c":"cost","x":"B10d"},{"n":"Interessi attivi postali","v":-32.0,"c":"rev","x":"C16d"},{"n":"Interessi attivi bancari","v":-45.0,"c":"rev","x":"C16d"},{"n":"Costi di tenuta c/c","v":50.0,"c":"cost","x":"B7"},{"n":"Materie prime c/rimanenze finali","v":-20250.0,"c":"rettc","x":"B11"},{"n":"Prodotti in lavorazione c/rimanenze finali","v":-22750.0,"c":"rettc","x":"A2"},{"n":"Prodotti c/rimanenze finali","v":-49620.0,"c":"rettc","x":"A2"},{"n":"Costruzioni interne","v":-17200.0,"c":"rettc","x":"A4"},{"n":"TFR","v":17371.1,"c":"cost","x":"B9c"},{"n":"Imposte dell'esercizio","v":57183.0,"c":"cost","x":"I20"}]},"32":{"name":"Sonne spa","utile":202873.79,"target":2550616,"cards":[{"n":"Software","v":7500.0,"c":"plur","x":"BI3"},{"n":"Terreni e fabbricati","v":950000.0,"c":"plur","x":"BII1"},{"n":"Impianti e macchinari","v":935980.0,"c":"plur","x":"BII2"},{"n":"Attrezzature industriali","v":110000.0,"c":"plur","x":"BII3"},{"n":"Arredamento","v":56020.0,"c":"plur","x":"BII4"},{"n":"Automezzi","v":45250.0,"c":"plur","x":"BII4"},{"n":"Immobilizzazioni materiali in corso","v":23800.0,"c":"plur","x":"BII5"},{"n":"Partecipazioni in collegate","v":150318.0,"c":"fatt","x":"BIII1b"},{"n":"Prestiti a collegate","v":250000.0,"c":"fatt","x":"BIII2b"},{"n":"Materie prime","v":159350.0,"c":"sosp","x":"CI1"},{"n":"Prodotti in lavorazione","v":81300.0,"c":"sosp","x":"CI2"},{"n":"Prodotti finiti","v":286950.0,"c":"sosp","x":"CI4"},{"n":"Crediti v/clienti","v":639682.0,"c":"fatt","x":"CII1"},{"n":"Cambiali attive","v":13000.0,"c":"fatt","x":"CII1"},{"n":"Crediti insoluti","v":8750.0,"c":"fatt","x":"CII1"},{"n":"Banche c/c attivi","v":25122.76,"c":"fatt","x":"CIV1"},{"n":"Denaro in cassa","v":3350.0,"c":"fatt","x":"CIV3"},{"n":"Ratei attivi","v":3375.0,"c":"rta","x":"DA"},{"n":"Risconti attivi","v":7150.0,"c":"sosp","x":"DA"},{"n":"Fondo ammortamento software","v":-4500.0,"c":"famm","x":"BI3"},{"n":"Fondo ammortamento fabbricati","v":-231350.0,"c":"famm","x":"BII1"},{"n":"Fondo ammortamento impianti e macchinari","v":-772197.5,"c":"famm","x":"BII2"},{"n":"Fondo ammortamento attrezzature industriali","v":-85000.0,"c":"famm","x":"BII3"},{"n":"Fondo ammortamento arredamento","v":-56020.0,"c":"famm","x":"BII4"},{"n":"Fondo ammortamento automezzi","v":-44750.0,"c":"famm","x":"BII4"},{"n":"Fondo svalutazione crediti","v":-12464.66,"c":"fsval","x":"CII1"},{"n":"Capitale sociale","v":-900000.0,"c":"pn","x":"PAI"},{"n":"Riserva legale","v":-180000.0,"c":"pn","x":"PAIV"},{"n":"Riserva statutaria","v":-144108.0,"c":"pn","x":"PAV"},{"n":"Fondo responsabilità civile","v":-22000.0,"c":"frisk","x":"PB4"},{"n":"Debiti per TFR","v":-212550.85,"c":"fpas","x":"PC"},{"n":"Banche c/interessi maturati","v":-640.0,"c":"fpas","x":"PD4"},{"n":"Debiti v/fornitori","v":-598263.0,"c":"fpas","x":"PD7"},{"n":"Fatture da ricevere","v":-20160.0,"c":"fpas","x":"PD7"},{"n":"Cambiali passive","v":-6501.0,"c":"fpas","x":"PD8"},{"n":"Debiti per ritenute da versare","v":-7695.2,"c":"fpas","x":"PD12"},{"n":"Debiti per imposte","v":-7814.76,"c":"fpas","x":"PD12"},{"n":"Debiti per IVA","v":-8494.0,"c":"fpas","x":"PD12"},{"n":"Debiti fiscali diversi","v":-180.0,"c":"fpas","x":"PD12"},{"n":"Debiti v/istituti previdenziali","v":-20585.0,"c":"fpas","x":"PD13"},{"n":"Risconti passivi","v":-218750.0,"c":"rsp","x":"PE"},{"n":"Prodotti c/vendite","v":-4123985.0,"c":"rev","x":"A1"},{"n":"Resi su vendite","v":10746.0,"c":"rev","x":"A1"},{"n":"Prodotti in lavorazione c/esistenze iniziali","v":81637.0,"c":"cost","x":"A2"},{"n":"Prodotti c/esistenze iniziali","v":280254.0,"c":"cost","x":"A2"},{"n":"Sopravvenienze attive","v":-10215.0,"c":"rev","x":"A5"},{"n":"Contributi in c/impianti","v":-31250.0,"c":"rev","x":"A5"},{"n":"Materie prime c/acquisti","v":2967023.0,"c":"cost","x":"B6"},{"n":"Resi su acquisti","v":-14545.0,"c":"rettc","x":"B6"},{"n":"Costi per servizi","v":332465.0,"c":"cost","x":"B7"},{"n":"Canoni di leasing","v":6000.0,"c":"cost","x":"B8"},{"n":"Salari e stipendi","v":254480.0,"c":"cost","x":"B9a"},{"n":"Oneri sociali","v":114669.0,"c":"cost","x":"B9b"},{"n":"Materie prime c/esistenze iniziali","v":150418.0,"c":"cost","x":"B11"},{"n":"Oneri fiscali diversi","v":512.0,"c":"cost","x":"B14"},{"n":"Interessi attivi v/clienti","v":-8787.0,"c":"rev","x":"C16d"},{"n":"Interessi passivi v/fornitori","v":2992.0,"c":"cost","x":"C17"},{"n":"Sconti passivi bancari","v":4500.0,"c":"cost","x":"C17"},{"n":"Interessi attivi bancari","v":-24.0,"c":"rev","x":"C16d"},{"n":"Interessi passivi bancari","v":640.0,"c":"cost","x":"C17"},{"n":"TFR","v":23285.05,"c":"cost","x":"B9c"},{"n":"Perdite su crediti","v":4233.0,"c":"cost","x":"B14"},{"n":"Svalutazione crediti","v":12464.66,"c":"cost","x":"B10d"},{"n":"Interessi attivi v/collegate","v":-3375.0,"c":"rev","x":"C16a"},{"n":"Materie prime c/rimanenze finali","v":-159350.0,"c":"rettc","x":"B11"},{"n":"Prodotti in lavorazione c/rimanenze finali","v":-81300.0,"c":"rettc","x":"A2"},{"n":"Prodotti c/rimanenze finali","v":-286950.0,"c":"rettc","x":"A2"},{"n":"Ammortamento software","v":1500.0,"c":"cost","x":"B10a"},{"n":"Ammortamento fabbricati","v":30600.0,"c":"cost","x":"B10b"},{"n":"Ammortamento impianti e macchinari","v":116997.5,"c":"cost","x":"B10b"},{"n":"Ammortamento attrezzature industriali","v":27500.0,"c":"cost","x":"B10b"},{"n":"Ammortamento arredamento","v":5620.0,"c":"cost","x":"B10b"},{"n":"Ammortamento automezzi","v":9050.0,"c":"cost","x":"B10b"},{"n":"Costruzioni interne","v":-23800.0,"c":"rettc","x":"A4"},{"n":"Accantonamento responsabilità civile","v":2700.0,"c":"cost","x":"B12"},{"n":"Imposte dell'esercizio","v":100421.0,"c":"cost","x":"I20"}]}};
+
+/* Voci del bilancio civilistico. s = come contribuisce il saldo del conto (Dare positivo): +1 o −1 */
+const VOCI = [
+ {id:'SA',doc:'SP',side:'att',g:'A) Crediti verso soci',c:'A',l:'Crediti verso soci per versamenti ancora dovuti',s:1},
+ {id:'BI2',doc:'SP',side:'att',g:'B.I Immobilizzazioni immateriali',c:'B.I.2',l:'Costi di sviluppo',s:1},
+ {id:'BI3',doc:'SP',side:'att',g:'B.I Immobilizzazioni immateriali',c:'B.I.3',l:"Diritti di brevetto e opere dell'ingegno",s:1},
+ {id:'BII1',doc:'SP',side:'att',g:'B.II Immobilizzazioni materiali',c:'B.II.1',l:'Terreni e fabbricati',s:1},
+ {id:'BII2',doc:'SP',side:'att',g:'B.II Immobilizzazioni materiali',c:'B.II.2',l:'Impianti e macchinario',s:1},
+ {id:'BII3',doc:'SP',side:'att',g:'B.II Immobilizzazioni materiali',c:'B.II.3',l:'Attrezzature industriali e commerciali',s:1},
+ {id:'BII4',doc:'SP',side:'att',g:'B.II Immobilizzazioni materiali',c:'B.II.4',l:'Altri beni',s:1},
+ {id:'BII5',doc:'SP',side:'att',g:'B.II Immobilizzazioni materiali',c:'B.II.5',l:'Immobilizzazioni in corso e acconti',s:1},
+ {id:'BIII1b',doc:'SP',side:'att',g:'B.III Immobilizzazioni finanziarie',c:'B.III.1b',l:'Partecipazioni in imprese collegate',s:1},
+ {id:'BIII1d',doc:'SP',side:'att',g:'B.III Immobilizzazioni finanziarie',c:'B.III.1d-bis',l:'Partecipazioni in altre imprese',s:1},
+ {id:'BIII2b',doc:'SP',side:'att',g:'B.III Immobilizzazioni finanziarie',c:'B.III.2b',l:'Crediti verso imprese collegate',s:1},
+ {id:'CI1',doc:'SP',side:'att',g:'C.I Rimanenze',c:'C.I.1',l:'Materie prime, sussidiarie e di consumo',s:1},
+ {id:'CI2',doc:'SP',side:'att',g:'C.I Rimanenze',c:'C.I.2',l:'Prodotti in corso di lavorazione e semilavorati',s:1},
+ {id:'CI4',doc:'SP',side:'att',g:'C.I Rimanenze',c:'C.I.4',l:'Prodotti finiti e merci',s:1},
+ {id:'CII1',doc:'SP',side:'att',g:'C.II Crediti',c:'C.II.1',l:'Crediti verso clienti',s:1},
+ {id:'CIV1',doc:'SP',side:'att',g:'C.IV Disponibilità liquide',c:'C.IV.1',l:'Depositi bancari e postali',s:1},
+ {id:'CIV3',doc:'SP',side:'att',g:'C.IV Disponibilità liquide',c:'C.IV.3',l:'Denaro e valori in cassa',s:1},
+ {id:'DA',doc:'SP',side:'att',g:'D) Ratei e risconti',c:'D',l:'Ratei e risconti attivi',s:1},
+ {id:'PAI',doc:'SP',side:'pas',g:'A) Patrimonio netto',c:'A.I',l:'Capitale',s:-1},
+ {id:'PAIV',doc:'SP',side:'pas',g:'A) Patrimonio netto',c:'A.IV',l:'Riserva legale',s:-1},
+ {id:'PAV',doc:'SP',side:'pas',g:'A) Patrimonio netto',c:'A.V',l:'Riserve statutarie',s:-1},
+ {id:'PAVIII',doc:'SP',side:'pas',g:'A) Patrimonio netto',c:'A.VIII',l:'Utili portati a nuovo',s:-1},
+ {id:'PAIX',doc:'SP',side:'pas',g:'A) Patrimonio netto',c:'A.IX',l:"Utile dell'esercizio",s:-1},
+ {id:'PB4',doc:'SP',side:'pas',g:'B) Fondi per rischi e oneri',c:'B.4',l:'Altri fondi',s:-1},
+ {id:'PC',doc:'SP',side:'pas',g:'C) TFR',c:'C',l:'Trattamento di fine rapporto',s:-1},
+ {id:'PD4',doc:'SP',side:'pas',g:'D) Debiti',c:'D.4',l:'Debiti verso banche',s:-1},
+ {id:'PD7',doc:'SP',side:'pas',g:'D) Debiti',c:'D.7',l:'Debiti verso fornitori',s:-1},
+ {id:'PD8',doc:'SP',side:'pas',g:'D) Debiti',c:'D.8',l:'Debiti rappresentati da titoli di credito',s:-1},
+ {id:'PD12',doc:'SP',side:'pas',g:'D) Debiti',c:'D.12',l:'Debiti tributari',s:-1},
+ {id:'PD13',doc:'SP',side:'pas',g:'D) Debiti',c:'D.13',l:'Debiti verso istituti di previdenza',s:-1},
+ {id:'PE',doc:'SP',side:'pas',g:'E) Ratei e risconti',c:'E',l:'Ratei e risconti passivi',s:-1},
+ {id:'A1',doc:'CE',side:'A',g:'A) Valore della produzione',c:'A.1',l:'Ricavi delle vendite e delle prestazioni',s:-1},
+ {id:'A2',doc:'CE',side:'A',g:'A) Valore della produzione',c:'A.2',l:'Variazioni rimanenze prodotti in lavorazione e finiti',s:-1},
+ {id:'A4',doc:'CE',side:'A',g:'A) Valore della produzione',c:'A.4',l:'Incrementi di immobilizzazioni per lavori interni',s:-1},
+ {id:'A5',doc:'CE',side:'A',g:'A) Valore della produzione',c:'A.5',l:'Altri ricavi e proventi',s:-1},
+ {id:'B6',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.6',l:'Materie prime, sussidiarie, di consumo e merci',s:1},
+ {id:'B7',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.7',l:'Servizi',s:1},
+ {id:'B8',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.8',l:'Godimento di beni di terzi',s:1},
+ {id:'B9a',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.9a',l:'Salari e stipendi',s:1},
+ {id:'B9b',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.9b',l:'Oneri sociali',s:1},
+ {id:'B9c',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.9c',l:'Trattamento di fine rapporto',s:1},
+ {id:'B10a',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.10a',l:'Ammortamento immobilizzazioni immateriali',s:1},
+ {id:'B10b',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.10b',l:'Ammortamento immobilizzazioni materiali',s:1},
+ {id:'B10d',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.10d',l:"Svalutazione crediti dell'attivo circolante",s:1},
+ {id:'B11',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.11',l:'Variazioni rimanenze materie prime',s:1},
+ {id:'B12',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.12',l:'Accantonamenti per rischi',s:1},
+ {id:'B14',doc:'CE',side:'B',g:'B) Costi della produzione',c:'B.14',l:'Oneri diversi di gestione',s:1},
+ {id:'C15',doc:'CE',side:'C',g:'C) Proventi e oneri finanziari',c:'C.15',l:'Proventi da partecipazioni',s:-1},
+ {id:'C16a',doc:'CE',side:'C',g:'C) Proventi e oneri finanziari',c:'C.16a',l:'Proventi da crediti immobilizzati',s:-1},
+ {id:'C16d',doc:'CE',side:'C',g:'C) Proventi e oneri finanziari',c:'C.16d',l:'Proventi diversi dai precedenti',s:-1},
+ {id:'C17',doc:'CE',side:'C',g:'C) Proventi e oneri finanziari',c:'C.17',l:'Interessi e altri oneri finanziari',s:1},
+ {id:'I20',doc:'CE',side:'I',g:'Imposte',c:'20',l:"Imposte sul reddito dell'esercizio",s:1},
+];
+const V = Object.fromEntries(VOCI.map(v=>[v.id,v]));
+
+const CAT = {
+ plur:'Costo pluriennale · immobilizzazione', fatt:'Valore finanziario attivo', sosp:'Costo sospeso', famm:'Rettifica di un costo pluriennale',
+ fsval:'Rettifica di un credito', pn:'Patrimonio netto', frisk:'Fondo per rischi · debito presunto', fpas:'Valore finanziario passivo',
+ rateo:'Rateo passivo · debito presunto', rta:'Rateo attivo · credito presunto', rsp:'Ricavo sospeso',
+ rev:"Componente positivo d'esercizio", cost:"Costo d'esercizio", rettc:"Rettifica d'esercizio"
+};
+const SPCAT = new Set(['plur','fatt','sosp','famm','fsval','pn','frisk','fpas','rateo','rta','rsp']);
+
+/* Spiegazioni: prima il conto specifico, poi la voce */
+const WHY = {
+ 'Azionisti c/versamenti richiamati':"Capitale sottoscritto e richiamato che i soci non hanno ancora versato. Ha una voce tutta sua, in testa all'attivo: A) Crediti verso soci.",
+ 'Costi di sviluppo':"Sono i costi del progetto che l'impresa ha capitalizzato (punto a del testo): diventano un'immobilizzazione immateriale.",
+ 'Brevetti industriali':"Il brevetto è un diritto: immobilizzazione immateriale, voce B.I.3.",
+ 'Software':"Il software è un'opera dell'ingegno: va con i diritti di brevetto in B.I.3.",
+ 'Terreni e fabbricati':"Bene durevole: immobilizzazione materiale B.II.1. Ricorda che il terreno non si ammortizza.",
+ 'Arredamento':"Arredamento e automezzi non hanno una voce propria: vanno in B.II.4 «altri beni».",
+ 'Automezzi':"Automezzi e arredamento non hanno una voce propria: vanno in B.II.4 «altri beni».",
+ 'Attrezzature commerciali':"Industriali e commerciali stanno insieme nella stessa voce B.II.3.",
+ 'Immobilizzazioni materiali in corso':"Impianto in costruzione non ancora finito: B.II.5. Non si ammortizza finché non entra in funzione.",
+ 'Partecipazioni in collegate':"Partecipazione durevole in una società collegata: immobilizzazione finanziaria B.III.1b.",
+ 'Partecipazioni diverse':"Partecipazione durevole in altre imprese (non controllate né collegate): B.III.1d-bis.",
+ 'Prestiti a collegate':"Un prestito a lungo termine è un credito immobilizzato: B.III.2b, non C.II.",
+ 'Crediti insoluti':"Anche se il cliente non ha pagato alla scadenza, resta un credito verso clienti: si somma in C.II.1.",
+ 'Cambiali attive':"Sono crediti verso clienti rappresentati da un titolo: si sommano in C.II.1.",
+ 'Fondo svalutazione crediti':"Non è un debito: rettifica i crediti. Nel bilancio si sottrae dai crediti verso clienti in C.II.1.",
+ 'Banche c/c attivi':"Saldo Dare: denaro depositato in banca. Disponibilità liquida C.IV.1.",
+ 'C/c postali':"Depositi postali: disponibilità liquida C.IV.1, insieme ai depositi bancari.",
+ 'Banche c/c passivi':"Saldo Avere: è uno scoperto, cioè un debito verso la banca. Va in D.4, non tra le disponibilità liquide.",
+ 'Banche c/interessi maturati':"Interessi passivi maturati e non ancora addebitati: debito verso la banca, D.4.",
+ 'Mutui passivi':"Il mutuo è un debito verso la banca: D.4.",
+ 'Fatture da ricevere':"Debito verso fornitori per beni o servizi già ricevuti, fattura in arrivo: si somma in D.7.",
+ 'Cambiali passive':"Debiti rappresentati da titoli di credito: voce D.8, separata dai debiti verso fornitori.",
+ 'Debiti per ritenute da versare':"Ritenute trattenute ai dipendenti da versare all'Erario: debito tributario D.12.",
+ 'Debiti per imposte':"IRES e IRAP ancora da pagare, al netto di acconti e ritenute: debito tributario D.12.",
+ 'Debiti per IVA':"IVA a debito dalla liquidazione di dicembre: debito tributario D.12.",
+ 'Debiti fiscali diversi':"Altri debiti verso l'Erario: D.12.",
+ 'Ratei attivi':"Credito presunto per ricavi maturati e non ancora incassati: ratei e risconti attivi, voce D.",
+ 'Risconti attivi':"Costo sospeso rinviato al prossimo esercizio: voce D dell'attivo.",
+ 'Ratei passivi':"Debito presunto per costi maturati e non ancora pagati: voce E del passivo.",
+ 'Risconti passivi':"Ricavo sospeso rinviato ai prossimi esercizi (qui il contributo in c/impianti): voce E del passivo.",
+ 'Fondo responsabilità civile':"Fondo per un rischio probabile ma incerto nell'importo: B.4 «altri fondi».",
+ 'Debiti per TFR':"Debito verso i dipendenti per il TFR maturato: ha una voce propria, la C del passivo.",
+ "Utile d'esercizio":"Il saldo del Conto di risultato economico dopo l'epilogo: Avere = utile. Va nel patrimonio netto, A.IX.",
+ 'Resi su vendite':"Rettifica dei ricavi: non è un costo, si sottrae dalle vendite in A.1.",
+ 'Ribassi e abbuoni passivi':"Riduzione di prezzo concessa ai clienti: rettifica dei ricavi, si sottrae in A.1.",
+ 'Prodotti in lavorazione c/esistenze iniziali':"Per i prodotti le rimanenze vanno in A.2 come variazione (finali − iniziali). Le esistenze iniziali entrano con il segno meno.",
+ 'Prodotti c/esistenze iniziali':"Per i prodotti finiti le rimanenze vanno in A.2 come variazione (finali − iniziali). Le esistenze iniziali entrano con il segno meno.",
+ 'Prodotti in lavorazione c/rimanenze finali':"Rimanenze finali dei prodotti: in A.2, variazione = finali − iniziali.",
+ 'Prodotti c/rimanenze finali':"Rimanenze finali dei prodotti: in A.2, variazione = finali − iniziali.",
+ 'Materie prime c/esistenze iniziali':"Per le materie prime la variazione è in B.11, calcolata al contrario: iniziali − finali.",
+ 'Materie prime c/rimanenze finali':"Per le materie prime la variazione è in B.11: iniziali − finali. Le finali riducono il costo.",
+ 'Costruzioni interne':"Costi sostenuti per costruire in proprio un'immobilizzazione: li neutralizza A.4, incrementi per lavori interni.",
+ 'Costi di sviluppo rinviati':"Il componente positivo che capitalizza i costi di sviluppo: A.4, incrementi per lavori interni.",
+ 'Plusvalenze':"Plusvalenza da vendita di un bene strumentale nella gestione ordinaria: A.5 altri ricavi.",
+ 'Minusvalenze':"Minusvalenza da vendita di un bene strumentale: B.14 oneri diversi di gestione.",
+ 'Rimborsi costi di vendita':"Rimborsi addebitati ai clienti: A.5 altri ricavi e proventi.",
+ 'Sopravvenienze attive':"Ricavo straordinario ma di natura ordinaria nel nuovo schema: A.5.",
+ 'Contributi in c/impianti':"Quota di contributo di competenza dell'esercizio: A.5 altri ricavi e proventi.",
+ 'Resi su acquisti':"Rettifica il costo delle materie: si sottrae in B.6.",
+ 'Ribassi e abbuoni attivi':"Riduzione di prezzo ottenuta dai fornitori: rettifica il costo delle materie in B.6.",
+ "Costi d'incasso":"È un servizio (bancario), non un interesse: B.7.",
+ 'Commissioni bancarie':"Le commissioni pagano un servizio della banca: B.7, non C.17.",
+ 'Costi di tenuta c/c':"Spese per la tenuta del conto: servizio bancario, B.7.",
+ 'Canoni di leasing':"Usare un bene di proprietà di altri: B.8 godimento di beni di terzi.",
+ 'TFR':"Quota di TFR maturata nell'anno: B.9c. Il debito accumulato va invece nello SP, voce C.",
+ 'Svalutazione crediti':"Costo stimato per i crediti che non si incasseranno: B.10d.",
+ 'Perdite su crediti':"Perdita certa su un credito: B.14 oneri diversi di gestione.",
+ 'Oneri fiscali diversi':"Imposte indirette e tasse diverse da IRES e IRAP: B.14.",
+ 'Accantonamento responsabilità civile':"Costo per il rischio probabile: B.12 accantonamenti per rischi.",
+ 'Proventi da partecipazioni':"Dividendi da partecipazioni: C.15.",
+ 'Interessi attivi v/collegate':"Interessi sul prestito immobilizzato alla collegata: C.16a, proventi da crediti iscritti nelle immobilizzazioni.",
+ 'Sconti passivi bancari':"Lo sconto di cambiali costa interessi: è un onere finanziario, C.17.",
+ 'Interessi passivi v/fornitori':"Interessi per dilazione di pagamento: onere finanziario, C.17.",
+ "Imposte dell'esercizio":"IRES e IRAP di competenza: voce 20, l'ultima prima del risultato.",
+};
+const VWHY = {
+ BII2:"Bene durevole della produzione: immobilizzazione materiale B.II.2.", BII3:"Immobilizzazione materiale B.II.3.",
+ CI1:"Rimanenza di materie prime alla fine dell'anno: attivo circolante C.I.1.", CI2:"Rimanenza di prodotti in lavorazione: C.I.2.", CI4:"Rimanenza di prodotti finiti: C.I.4.",
+ CII1:"Credito commerciale verso clienti: C.II.1.", CIV3:"Contanti in cassa: C.IV.3.",
+ PAI:"Capitale sociale: A.I del patrimonio netto.", PAIV:"Riserva legale: A.IV.", PAV:"Riserva prevista dallo statuto: A.V.", PAVIII:"Utili degli anni precedenti non distribuiti: A.VIII.",
+ PD7:"Debito commerciale verso fornitori: D.7.", PD13:"Contributi da versare a INPS e INAIL: D.13.",
+ A1:"Ricavo tipico della vendita dei prodotti: A.1.", B6:"Acquisti di materie prime: B.6.", B7:"Costo per un servizio ricevuto: B.7.",
+ B9a:"Costo del personale: B.9a.", B9b:"Contributi a carico dell'impresa: B.9b.",
+ B10a:"Ammortamento di un'immobilizzazione immateriale: B.10a.", B10b:"Ammortamento di un'immobilizzazione materiale: B.10b.",
+ C16d:"Interessi attivi verso clienti o banche: C.16d.", C17:"Interessi passivi: onere finanziario C.17."
+};
+function why(card){
+  if (WHY[card.n]) return WHY[card.n];
+  if (card.c==='famm') return `Il fondo ammortamento non è un debito: rettifica il valore del bene. Nel bilancio si sottrae dal costo e si scrive il valore netto in ${V[card.x].c} ${V[card.x].l.toLowerCase()}.`;
+  return VWHY[card.x] || `Va in ${V[card.x].c} ${V[card.x].l.toLowerCase()}.`;
+}
+
+/* ---------- utilità ---------- */
+const fmt2 = n => n.toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
+const hu = x => (x<0?-1:1)*Math.floor(Math.abs(x)+0.5+1e-9);
+const fmt0 = n => hu(n).toLocaleString('it-IT');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const shuffle = a => {for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const $ = s => document.querySelector(s);
+
+let cfg = {co:'31', mode:'full', teams:1};
+let G = null;
+
+function tcardHTML(card, small){
+  const d = card.v>0, amt = fmt2(Math.abs(card.v));
+  return `<div class="tcard${small?'':' enter'}" id="tc">
+    <div class="th"><span class="eyebrow">${small?'Conto':'Situazione contabile finale'}</span><span class="eyebrow">${esc(DATA[cfg.co]?.name||'')}</span></div>
+    <div class="name">${esc(card.n)}</div>
+    <div class="tt"><div class="side d"><div class="lab">Dare</div><div class="amt num ${d?'':'none'}">${d?amt:'—'}</div></div>
+    <div class="side a"><div class="lab">Avere</div><div class="amt num ${d?'none':''}">${d?'—':amt}</div></div></div>
+    <div class="foot"><span>Saldo ${d?'Dare':'Avere'}</span><span>${d?'':''}</span></div></div>`;
+}
+
+/* ---------- START ---------- */
+function start(){
+  const d31=DATA['31'], d32=DATA['32'];
+  $('#app').innerHTML = `
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Economia aziendale · bilancio d'esercizio · art. 2424 e 2425 c.c.</div>
+      <h1>Chi va<br>dove<span class="q">?</span></h1>
+      <p class="lead">Arrivano uno alla volta i conti della situazione contabile finale. Decidi se finiscono nello Stato patrimoniale o nel Conto economico, poi scegli la voce giusta. Conto dopo conto il bilancio si riempie: alla fine attivo e passivo devono quadrare.</p>
+    </div>
+    <div class="demo" aria-hidden="true">
+      ${tcardHTML({n:'Fondo ammortamento impianti e macchinari',v:-96458.79},true)}
+      ${tcardHTML({n:'Prodotti c/rimanenze finali',v:-49620},true)}
+    </div>
+  </section>
+  <section class="setup">
+    <div class="opt"><h3>Esercizio</h3><div class="choices" data-k="co">
+      <button class="choice" data-v="31" aria-pressed="${cfg.co==='31'}"><span><b>3.1 · ${d31.name}</b><br><small>${d31.cards.length} conti · utile ${fmt2(d31.utile)}</small></span></button>
+      <button class="choice" data-v="32" aria-pressed="${cfg.co==='32'}"><span><b>3.2 · ${d32.name}</b><br><small>${d32.cards.length} conti · utile ${fmt2(d32.utile)}</small></span></button>
+    </div></div>
+    <div class="opt"><h3>Partita</h3><div class="choices" data-k="mode">
+      <button class="choice" data-v="full" aria-pressed="${cfg.mode==='full'}"><span><b>Completa</b><br><small>Tutti i conti: il bilancio deve quadrare</small></span></button>
+      <button class="choice" data-v="quick" aria-pressed="${cfg.mode==='quick'}"><span><b>Rapida</b><br><small>20 conti a caso, 10 minuti circa</small></span></button>
+    </div></div>
+    <div class="opt"><h3>Giocatori</h3><div class="choices" data-k="teams">
+      <button class="choice" data-v="1" aria-pressed="${cfg.teams===1}"><span><b>Da solo</b><br><small>Allenamento o compito</small></span></button>
+      <button class="choice" data-v="2" aria-pressed="${cfg.teams===2}"><span><b>Due squadre</b><br><small>Alla LIM, un conto a testa</small></span></button>
+    </div></div>
+  </section>
+  <div class="go"><button class="btn acc" id="go">Inizia la partita</button><span class="note">Invio per andare avanti · i punti premiano la prima risposta</span></div>
+  <section class="rules">
+    <div class="rule"><b>1 · SP o CE?</b>I conti patrimoniali passano al Bilancio di chiusura, quelli economici al Conto di risultato economico. +5 punti se indovini al primo colpo.</div>
+    <div class="rule"><b>2 · Quale voce?</b>Scegli la voce del codice civile. +10 al primo tentativo, +5 al secondo. Dopo due errori la risposta compare da sola.</div>
+    <div class="rule"><b>3 · Serie</b>Da tre risposte perfette di fila in poi ogni conto vale 3 punti in più. Alla fine trovi il bilancio completo e i conti da ripassare.</div>
+  </section>`;
+  document.querySelectorAll('.choices').forEach(box=>box.addEventListener('click',e=>{
+    const b=e.target.closest('.choice'); if(!b) return;
+    const k=box.dataset.k; let v=b.dataset.v; if(k==='teams') v=+v;
+    cfg[k]=v; box.querySelectorAll('.choice').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  }));
+  $('#go').onclick=()=>newGame();
+}
+
+/* ---------- GAME ---------- */
+function newGame(deckOverride){
+  const D = DATA[cfg.co];
+  let deck;
+  if (deckOverride) deck = shuffle(deckOverride.slice());
+  else if (cfg.mode==='full') deck = shuffle(D.cards.slice());
+  else deck = shuffle(D.cards.slice()).slice(0,20);
+  G = {deck, i:0, vals:{}, placed:0, score:[0,0], streak:[0,0], errors:[], team:0, tab:'SP',
+       full: !deckOverride && cfg.mode==='full', utileAdded:false, perfect:0, total:0, t0:Date.now(), revision:!!deckOverride};
+  renderShell(); nextCard(true);
+}
+function renderShell(){
+  const D=DATA[cfg.co];
+  $('#app').innerHTML = `
+  <div class="top">
+    <div class="brand"><h2>Chi va dove<span class="q">?</span></h2><span class="eyebrow">Es. ${cfg.co==='31'?'3.1':'3.2'} · ${D.name}${G.revision?' · ripasso errori':''}</span></div>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="progress"><i id="prog"></i></div>
+  <div class="game">
+    <div class="play"><div class="stage" id="stage"></div><div id="steps"></div></div>
+    <aside class="ledger" aria-label="Il tuo bilancio">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tSP" aria-selected="true">Stato patrimoniale</button>
+        <button class="tab" role="tab" id="tCE" aria-selected="false">Conto economico</button>
+      </div>
+      <div class="lbody" id="lbody"></div>
+    </aside>
+  </div>`;
+  $('#tSP').onclick=()=>{G.tab='SP';renderLedger()}; $('#tCE').onclick=()=>{G.tab='CE';renderLedger()};
+  renderLedger(); renderStats();
+}
+function renderStats(){
+  const n=G.deck.length, done=G.i;
+  let h='';
+  if (cfg.teams===2){
+    h+=`<div class="stat team ${G.team===0?'on':''}"><div class="eyebrow">Squadra Blu</div><div class="v">${G.score[0]}</div></div>`;
+    h+=`<div class="stat team ${G.team===1?'on':''}"><div class="eyebrow">Squadra Rossa</div><div class="v">${G.score[1]}</div></div>`;
+  } else h+=`<div class="stat"><div class="eyebrow">Punti</div><div class="v">${G.score[0]}</div></div>`;
+  h+=`<div class="stat"><div class="eyebrow">Serie</div><div class="v">${G.streak[G.team]}</div></div>`;
+  h+=`<div class="stat"><div class="eyebrow">Conto</div><div class="v">${Math.min(done+1,n)}/${n}</div></div>`;
+  $('#stats').innerHTML=h; $('#prog').style.width=(100*done/n)+'%';
+}
+function nextCard(first){
+  if(!first){ G.i++; if(cfg.teams===2) G.team=1-G.team; }
+  if (G.i>=G.deck.length){
+    if (G.full && !G.utileAdded){ G.utileAdded=true; G.deck.push({n:"Utile d'esercizio", v:-ceUtile(), c:'pn', x:'PAIX'}); }
+    else return finish();
+  }
+  renderStats();
+  G.cur = {card:G.deck[G.i], s1:0, s2:0, doc:null, done:false};
+  const card=G.cur.card;
+  $('#stage').innerHTML = tcardHTML(card) + (cfg.teams===2?`<p class="note" style="margin:8px 2px 0">Tocca alla <b>${G.team===0?'Squadra Blu':'Squadra Rossa'}</b></p>`:'');
+  $('#steps').innerHTML = `<div class="step"><div class="q"><span class="n">1</span>Dove finisce questo conto?</div>
+    <div class="docs">
+      <button class="doc" data-d="SP"><b>Stato patrimoniale</b><span>Passa al Bilancio di chiusura</span></button>
+      <button class="doc" data-d="CE"><b>Conto economico</b><span>Si chiude nel Conto di risultato economico</span></button>
+    </div></div><div id="s2"></div><div id="fb"></div>`;
+  document.querySelectorAll('.doc').forEach(b=>b.onclick=()=>pickDoc(b));
+}
+function trueDoc(card){ return V[card.x].doc; }
+function pickDoc(btn){
+  const card=G.cur.card, right=trueDoc(card), d=btn.dataset.d;
+  if (G.cur.doc) return;
+  if (d===right){
+    btn.classList.add('right'); G.cur.doc=right;
+    if (G.cur.s1===0) addPts(5);
+    lockDocs(); showVoci(right);
+    $('#fb').innerHTML='';
+  } else {
+    G.cur.s1++; btn.classList.add('wrong'); shake();
+    const isSP=SPCAT.has(card.c);
+    $('#fb').innerHTML = `<div class="fb ko"><h4>No: va nel ${right==='SP'?'Stato patrimoniale':'Conto economico'}</h4>
+      <p>${esc(card.n)} è un conto ${isSP?'patrimoniale':'economico'} (${CAT[card.c].toLowerCase()}). ${isSP?"Il suo saldo non si chiude nell'epilogo: passa al Bilancio di chiusura.":"Nell'epilogo si chiude nel Conto di risultato economico."}</p></div>`;
+    G.cur.doc=right; lockDocs();
+    document.querySelector(`.doc[data-d="${right}"]`).classList.add('right');
+    showVoci(right);
+  }
+}
+function lockDocs(){ document.querySelectorAll('.doc').forEach(b=>b.disabled=true); }
+function showVoci(doc){
+  const groups = {};
+  VOCI.filter(v=>v.doc===doc).forEach(v=>{ const col = doc==='SP' ? (v.side==='att'?'Attivo':'Passivo') : (v.side==='A'?'Componenti positivi':'Componenti negativi e finanziari');
+    (groups[col]??={}); (groups[col][v.g]??=[]).push(v); });
+  let h=`<div class="step"><div class="q"><span class="n">2</span>In quale voce?</div><div class="vcols">`;
+  for (const [col,gs] of Object.entries(groups)){
+    h+=`<div class="vcol"><span class="eyebrow">${col}</span>`;
+    for (const [g,vs] of Object.entries(gs)){
+      h+=`<div class="vg"><div class="gl">${g}</div><div class="chips">${vs.map(v=>`<button class="chip" data-v="${v.id}"><span class="c">${v.c}</span>${v.l}</button>`).join('')}</div></div>`;
+    }
+    h+=`</div>`;
+  }
+  h+=`</div></div>`;
+  $('#s2').innerHTML=h;
+  document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>pickVoce(b));
+  if (doc!==G.tab){ G.tab=doc; renderLedger(); }
+}
+function pickVoce(btn){
+  const cur=G.cur, card=cur.card, id=btn.dataset.v;
+  if (cur.done) return;
+  if (id===card.x){
+    btn.classList.add('right');
+    const pts = cur.s2===0?10:5; addPts(pts);
+    finishCard(true, pts);
+  } else {
+    cur.s2++; btn.classList.add('wrong'); btn.disabled=true; shake();
+    if (cur.s2>=2){
+      document.querySelector(`.chip[data-v="${card.x}"]`).classList.add('right');
+      finishCard(false,0);
+    } else {
+      $('#fb').innerHTML=`<div class="fb ko"><h4>Non è ${V[id].c}</h4><p>Riprova: hai ancora un tentativo. Indizio: è un conto di tipo <b>${CAT[card.c].toLowerCase()}</b>.</p></div>`;
+    }
+  }
+}
+function finishCard(ok, pts){
+  const cur=G.cur, card=cur.card; cur.done=true;
+  document.querySelectorAll('.chip').forEach(b=>b.disabled=true);
+  const perfect = ok && cur.s1===0 && cur.s2===0;
+  G.total++;
+  if (perfect){ G.perfect++; G.streak[G.team]++; if (G.streak[G.team]>=3) addPts(3); }
+  else G.streak[G.team]=0;
+  if (!perfect && card.n!=="Utile d'esercizio") G.errors.push(card);
+  // registra nel bilancio
+  const v=V[card.x]; G.vals[card.x]=(G.vals[card.x]||0)+v.s*card.v; G.placed++;
+  G.flash=card.x; renderLedger(); renderStats();
+  const bonus = perfect && G.streak[G.team]>=3 ? ` + 3 serie` : '';
+  const head = perfect ? 'Esatto!' : ok ? 'Giusto, ma non al primo colpo' : `La voce giusta è ${v.c}`;
+  $('#fb').innerHTML = `<div class="fb ${perfect?'ok':ok?'info':'ko'}"><h4>${head}</h4>
+    <p><b>${v.c} · ${v.l}</b>. ${why(card)}</p>
+    <div class="row"><span class="pts">${cur.s1===0?'+5':'+0'} · +${pts}${bonus}</span>
+    <button class="btn" id="next">${G.i+1>=G.deck.length && !(G.full && !G.utileAdded)?'Vedi il bilancio':'Prossimo conto'} →</button></div></div>`;
+  $('#next').onclick=()=>nextCard(false); $('#next').focus({preventScroll:true});
+}
+function addPts(p){ G.score[G.team]+=p; renderStats(); }
+function shake(){ const t=$('#tc'); if(!t) return; t.classList.remove('shake','enter'); void t.offsetWidth; t.classList.add('shake'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'){ const n=document.getElementById('next'); if(n && document.activeElement!==n){ e.preventDefault(); n.click(); } } });
+
+/* ---------- BILANCIO LIVE ---------- */
+function sumSide(side){ return VOCI.filter(v=>v.side===side).reduce((s,v)=>s+(G.vals[v.id]!==undefined?hu(G.vals[v.id]):0),0); }
+function ceParts(){
+  const g=id=>G.vals[id]||0;
+  const A=['A1','A2','A4','A5'].reduce((s,k)=>s+g(k),0);
+  const B=['B6','B7','B8','B9a','B9b','B9c','B10a','B10b','B10d','B11','B12','B14'].reduce((s,k)=>s+g(k),0);
+  const C=g('C15')+g('C16a')+g('C16d')-g('C17');
+  return {A,B,C,I:g('I20'),U:A-B+C-g('I20')};
+}
+function ceUtile(){ return Math.round(ceParts().U*100)/100; }
+function renderLedger(){
+  if(!G) return;
+  $('#tSP').setAttribute('aria-selected',G.tab==='SP'); $('#tCE').setAttribute('aria-selected',G.tab==='CE');
+  const D=DATA[cfg.co];
+  const row=(v,val,neg)=>`<div class="lrow ${val===undefined?'empty':''} ${G.flash===v.id?'flash':''}"><span class="l"><span class="c">${v.c}</span>${v.l}</span><span class="v">${val===undefined?'—':(neg?'− ':'')+fmt0(val)}</span></div>`;
+  let h='';
+  if (G.tab==='SP'){
+    for (const [side,title] of [['att','Attivo'],['pas','Passivo']]){
+      const tot=sumSide(side);
+      h+=`<div class="lsec"><h5><span>${title}</span><span class="num">${tot.toLocaleString('it-IT')}</span></h5>`;
+      VOCI.filter(v=>v.side===side && (G.vals[v.id]!==undefined || usedIn(v.id))).forEach(v=>h+=row(v,G.vals[v.id]));
+      h+=`</div>`;
+    }
+    const a=sumSide('att'), p=sumSide('pas'), T=D.target;
+    h+=`<div class="check">
+      <div class="meter"><span>Attivo</span><span class="bar att"><i style="width:${Math.min(100,100*a/T)}%"></i></span><span class="v">${a.toLocaleString('it-IT')}</span></div>
+      <div class="meter"><span>Passivo</span><span class="bar pas"><i style="width:${Math.min(100,100*p/T)}%"></i></span><span class="v">${p.toLocaleString('it-IT')}</span></div>
+      <div class="target">${G.full?`Obiettivo: attivo = passivo = ${T.toLocaleString('it-IT')} (con l'utile nel patrimonio netto)`:'Partita rapida: il bilancio resta parziale'}</div></div>`;
+  } else {
+    const P=ceParts();
+    const sec=(title,side,neg)=>{ let s=`<div class="lsec"><h5><span>${title}</span></h5>`;
+      VOCI.filter(v=>v.side===side && (G.vals[v.id]!==undefined || usedIn(v.id))).forEach(v=>s+=row(v,G.vals[v.id],neg&&v.id!=='C15'&&v.id!=='C16a'&&v.id!=='C16d'));
+      return s+'</div>'; };
+    h+=sec('A) Valore della produzione','A');
+    h+=`<div class="lrow tot"><span>Totale A</span><span class="v">${fmt0(P.A)}</span></div>`;
+    h+=sec('B) Costi della produzione','B');
+    h+=`<div class="lrow tot"><span>Totale B</span><span class="v">${fmt0(P.B)}</span></div>`;
+    h+=`<div class="lrow tot"><span>Differenza A − B</span><span class="v">${fmt0(P.A-P.B)}</span></div>`;
+    h+=sec('C) Proventi e oneri finanziari','C',true);
+    h+=`<div class="lrow tot"><span>Totale C</span><span class="v">${fmt0(P.C)}</span></div>`;
+    h+=sec('Imposte','I',true);
+    h+=`<div class="check"><div class="utile"><span>${P.U>=0?"Utile":"Perdita"} dell'esercizio</span><span class="v">${fmt2(P.U)}</span></div>
+      <div class="target">${G.full?`Obiettivo: utile ${fmt2(D.utile)}`:'Partita rapida: il risultato resta parziale'}</div></div>`;
+  }
+  $('#lbody').innerHTML=h;
+  G.flash=null;
+}
+function usedIn(id){ return G.full ? DATA[cfg.co].cards.some(c=>c.x===id) || id==='PAIX' : false; }
+
+/* ---------- FINE ---------- */
+function finish(){
+  const D=DATA[cfg.co], a=sumSide('att'), p=sumSide('pas'), P=ceParts();
+  const quadra = G.full && a===p && a===D.target;
+  const secs=Math.round((Date.now()-G.t0)/1000), mm=Math.floor(secs/60), ss=String(secs%60).padStart(2,'0');
+  const acc = G.total? Math.round(100*G.perfect/G.total):0;
+  let winner='';
+  if (cfg.teams===2) winner = G.score[0]===G.score[1]?'Pareggio!':`Vince la ${G.score[0]>G.score[1]?'Squadra Blu':'Squadra Rossa'}!`;
+  const title = G.full ? (quadra?'Il bilancio quadra.':'Qualcosa non torna') : (G.revision?'Ripasso finito':'Partita finita');
+  let h=`<section class="end">
+    <div class="eyebrow">Es. ${cfg.co==='31'?'3.1':'3.2'} · ${D.name}</div>
+    <h2>${title} ${winner}</h2>
+    <div class="verdict">
+      ${cfg.teams===2?`<div class="kpi"><div class="eyebrow">Squadra Blu</div><div class="v">${G.score[0]}</div></div><div class="kpi"><div class="eyebrow">Squadra Rossa</div><div class="v">${G.score[1]}</div></div>`:`<div class="kpi"><div class="eyebrow">Punti</div><div class="v">${G.score[0]}</div></div>`}
+      <div class="kpi ${acc>=80?'good':''}"><div class="eyebrow">Perfetti al primo colpo</div><div class="v">${G.perfect}/${G.total} · ${acc}%</div></div>
+      <div class="kpi"><div class="eyebrow">Tempo</div><div class="v">${mm}:${ss}</div></div>
+      ${G.full?`<div class="kpi ${quadra?'good':''}"><div class="eyebrow">Attivo = Passivo</div><div class="v">${a.toLocaleString('it-IT')}</div></div>`:''}
+    </div>
+    <div class="go"><button class="btn acc" id="again">Nuova partita</button>
+    ${G.errors.length?`<button class="btn" id="rev">Rigioca solo i ${G.errors.length} errori</button>`:''}
+    <button class="btn ghost" id="menu">Cambia esercizio</button></div>`;
+  if (G.errors.length){
+    h+=`<div class="errs"><h3>Da ripassare</h3><ul>${G.errors.map(c=>`<li><b>${esc(c.n)}</b>${V[c.x].doc==='SP'?'Stato patrimoniale':'Conto economico'} · ${V[c.x].c} ${V[c.x].l}</li>`).join('')}</ul></div>`;
+  }
+  if (G.full) h+=bilancioFinale(D,P);
+  h+=`</section>`;
+  $('#app').innerHTML=h; window.scrollTo({top:0});
+  $('#again').onclick=()=>newGame(); $('#menu').onclick=()=>{G=null;start()};
+  if ($('#rev')) { const errs=G.errors.slice(); $('#rev').onclick=()=>newGame(errs); }
+}
+function bilancioFinale(D,P){
+  const r = id => G.vals[id]!==undefined ? hu(G.vals[id]) : null;
+  const tr=(v,val,neg)=>`<tr><td class="i">${v.c} ${v.l}</td><td class="n">${neg&&val?'− ':''}${val.toLocaleString('it-IT')}</td></tr>`;
+  const sp=side=>{ let s='', last=''; VOCI.filter(v=>v.side===side && r(v.id)!==null).forEach(v=>{ if(v.g!==last){s+=`<tr class="h"><td colspan="2">${v.g}</td></tr>`;last=v.g} s+=tr(v,r(v.id)); }); return s; };
+  // arrotondamento CE: la differenza va in A.5 come nel libro
+  const vals={}; VOCI.filter(v=>v.doc==='CE').forEach(v=>{ if(r(v.id)!==null) vals[v.id]=r(v.id) });
+  const sum=ks=>ks.reduce((s,k)=>s+(vals[k]||0),0);
+  const Aks=['A1','A2','A4','A5'], Bks=['B6','B7','B8','B9a','B9b','B9c','B10a','B10b','B10d','B11','B12','B14'];
+  let diff = hu(P.U) - (sum(Aks)-sum(Bks)+(vals.C15||0)+(vals.C16a||0)+(vals.C16d||0)-(vals.C17||0)-(vals.I20||0));
+  if (diff) vals.A5=(vals.A5||0)+diff;
+  const ce=(ks)=>ks.filter(k=>vals[k]!==undefined).map(k=>tr(V[k],vals[k],['C17','I20'].includes(k))).join('');
+  const TA=sum(Aks), TB=sum(Bks), TC=(vals.C15||0)+(vals.C16a||0)+(vals.C16d||0)-(vals.C17||0);
+  return `<div class="bil">
+    <div class="blk"><h3>Stato patrimoniale</h3><table class="civ">
+      <tr class="h"><td colspan="2">Attivo</td></tr>${sp('att')}<tr class="t"><td>Totale attivo</td><td class="n">${sumSide('att').toLocaleString('it-IT')}</td></tr>
+      <tr class="h"><td colspan="2">Passivo</td></tr>${sp('pas')}<tr class="t"><td>Totale passivo</td><td class="n">${sumSide('pas').toLocaleString('it-IT')}</td></tr>
+    </table><p class="note">Importi in unità di euro: ogni voce è arrotondata. I fondi ammortamento e il fondo svalutazione crediti sono già sottratti dalle voci dell'attivo.</p></div>
+    <div class="blk"><h3>Conto economico</h3><table class="civ">
+      <tr class="h"><td colspan="2">A) Valore della produzione</td></tr>${ce(Aks)}<tr class="t"><td>Totale A</td><td class="n">${TA.toLocaleString('it-IT')}</td></tr>
+      <tr class="h"><td colspan="2">B) Costi della produzione</td></tr>${ce(Bks)}<tr class="t"><td>Totale B</td><td class="n">${TB.toLocaleString('it-IT')}</td></tr>
+      <tr class="t"><td>Differenza A − B</td><td class="n">${(TA-TB).toLocaleString('it-IT')}</td></tr>
+      <tr class="h"><td colspan="2">C) Proventi e oneri finanziari</td></tr>${ce(['C15','C16a','C16d','C17'])}<tr class="t"><td>Totale C</td><td class="n">${TC.toLocaleString('it-IT')}</td></tr>
+      <tr class="t"><td>Risultato prima delle imposte</td><td class="n">${(TA-TB+TC).toLocaleString('it-IT')}</td></tr>
+      ${ce(['I20'])}
+      <tr class="t"><td>21) Utile dell'esercizio</td><td class="n">${hu(P.U).toLocaleString('it-IT')}</td></tr>
+    </table><p class="note">Utile esatto ${fmt2(P.U)}.${diff?` Per far tornare i conti con gli arrotondamenti, ${diff>0?'+':''}${diff} euro è stato aggiunto in A.5, come nella soluzione del libro.`:''}</p></div>
+  </div>`;
+}
+
+start();
+</script>
+
+</body>
+</html>
